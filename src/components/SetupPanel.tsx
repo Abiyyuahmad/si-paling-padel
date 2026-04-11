@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type { TournamentConfig } from '../domain/types'
 
 interface SetupPanelProps {
@@ -9,6 +11,50 @@ interface SetupPanelProps {
   onResetTournament: () => void
   canGenerate: boolean
   canGenerateNextRound: boolean
+  hasStarted: boolean
+}
+
+interface DraftNumberInputProps {
+  value: number
+  min: number
+  max: number
+  step?: number
+  onCommit: (value: number) => void
+}
+
+function DraftNumberInput({ value, min, max, step, onCommit }: DraftNumberInputProps) {
+  const [draft, setDraft] = useState(value.toString())
+
+  const commitNumber = (rawValue: string) => {
+    if (rawValue.trim() === '') {
+      setDraft(value.toString())
+      return
+    }
+
+    const parsed = Number(rawValue)
+
+    if (!Number.isFinite(parsed)) {
+      setDraft(value.toString())
+      return
+    }
+
+    const safeValue = Math.min(max, Math.max(min, Math.floor(parsed)))
+    onCommit(safeValue)
+    setDraft(safeValue.toString())
+  }
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      inputMode="numeric"
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => commitNumber(draft)}
+    />
+  )
 }
 
 export function SetupPanel({
@@ -20,6 +66,7 @@ export function SetupPanel({
   onResetTournament,
   canGenerate,
   canGenerateNextRound,
+  hasStarted,
 }: SetupPanelProps) {
   const update = <K extends keyof TournamentConfig>(key: K, value: TournamentConfig[K]) => {
     onChange({
@@ -27,6 +74,9 @@ export function SetupPanel({
       [key]: value,
     })
   }
+
+  const generateLabel =
+    config.format === 'mexicano' ? 'Generate turnamen Mexicano' : 'Generate turnamen Americano'
 
   return (
     <section className="panel">
@@ -75,53 +125,61 @@ export function SetupPanel({
 
         <label className="field">
           <span>Poin per pertandingan</span>
-          <input
-            type="number"
+          <DraftNumberInput
+            key={`points-${config.pointsPerMatch}`}
+            value={config.pointsPerMatch}
             min={8}
             max={64}
             step={4}
-            value={config.pointsPerMatch}
-            onChange={(event) => update('pointsPerMatch', Number(event.target.value))}
+            onCommit={(value) => update('pointsPerMatch', value)}
           />
         </label>
 
         <label className="field">
           <span>Jumlah court</span>
-          <input
-            type="number"
+          <DraftNumberInput
+            key={`courts-${config.courts}`}
+            value={config.courts}
             min={1}
             max={16}
-            value={config.courts}
-            onChange={(event) => update('courts', Number(event.target.value))}
+            onCommit={(value) => update('courts', value)}
           />
         </label>
 
         <label className="field">
           <span>Ronde target</span>
-          <input
-            type="number"
+          <DraftNumberInput
+            key={`rounds-${config.rounds}`}
+            value={config.rounds}
             min={1}
             max={50}
-            value={config.rounds}
-            onChange={(event) => update('rounds', Number(event.target.value))}
+            onCommit={(value) => update('rounds', value)}
           />
         </label>
       </div>
 
       <div className="action-row">
-        <button className="button button-primary" disabled={!canGenerate} onClick={onGenerate}>
-          Generate turnamen
-        </button>
-        <button
-          className="button button-secondary"
-          disabled={!canGenerateNextRound}
-          onClick={onGenerateNextRound}
-        >
-          Generate ronde Mexicano
-        </button>
-        <button className="button button-ghost" onClick={onResetTournament}>
-          Reset semua skor
-        </button>
+        {!hasStarted ? (
+          <button className="button button-primary button-cta" disabled={!canGenerate} onClick={onGenerate}>
+            {generateLabel}
+          </button>
+        ) : null}
+
+        {hasStarted && config.format === 'mexicano' ? (
+          <button
+            className="button button-primary button-cta"
+            disabled={!canGenerateNextRound}
+            onClick={onGenerateNextRound}
+          >
+            Generate ronde Mexicano
+          </button>
+        ) : null}
+
+        {hasStarted ? (
+          <button className="button button-ghost" onClick={onResetTournament}>
+            Reset turnamen
+          </button>
+        ) : null}
       </div>
     </section>
   )

@@ -40,3 +40,19 @@ export const resetMatch = (match: Match): Match => ({
   ...match,
   pointLog: [],
 })
+
+export const setMatchScore = (match: Match, left: number, right: number): Match => {
+  const safeLeft = Math.max(0, Math.floor(left))
+  const safeRight = Math.max(0, Math.floor(right))
+  const total = Math.min(safeLeft + safeRight, match.pointsTarget)
+  const adjustedLeft = Math.min(safeLeft, total)
+  const adjustedRight = total - adjustedLeft
+
+  return {
+    ...match,
+    pointLog: [
+      ...Array.from({ length: adjustedLeft }, () => 'left' as const),
+      ...Array.from({ length: adjustedRight }, () => 'right' as const),
+    ],
+  }
+}

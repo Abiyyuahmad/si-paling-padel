@@ -6,7 +6,7 @@ import { SchedulePanel } from './components/SchedulePanel'
 import { SetupPanel } from './components/SetupPanel'
 import { StandingsPanel } from './components/StandingsPanel'
 import { generateNextMexicanoRound, generateTournament, validateGeneratorInput } from './domain/scheduler'
-import { resetMatch, isMatchComplete } from './domain/scoring'
+import { isMatchComplete } from './domain/scoring'
 import { buildStandings } from './domain/standings'
 import type { Match, TournamentState } from './domain/types'
 import { useLocalStorage } from './hooks/useLocalStorage'
@@ -29,6 +29,7 @@ const defaultState: TournamentState = {
 
 function App() {
   const [state, setState] = useLocalStorage(STORAGE_KEY, defaultState)
+  const hasStarted = state.matches.length > 0
   const standings = useMemo(
     () => buildStandings(state.players, state.matches),
     [state.matches, state.players],
@@ -96,7 +97,7 @@ function App() {
     <div className="app-shell">
       <header className="hero-shell">
         <div className="hero-copy">
-          <p className="eyebrow">PWA untuk HP</p>
+          <p className="eyebrow">@AbiyyuAhmad</p>
           <h1>Padel scoreboard untuk Americano dan Mexicano</h1>
           <p className="hero-text">
             Generate pairing, input poin kiri dan kanan per pertandingan, lalu lihat klasemen live
@@ -135,7 +136,8 @@ function App() {
             onResetTournament={() =>
               setState({
                 ...state,
-                matches: state.matches.map((match) => resetMatch(match)),
+                matches: [],
+                notices: [],
               })
             }
             canGenerate={validationWarnings.length === 0}
@@ -145,6 +147,7 @@ function App() {
               completedLastRound &&
               state.matches.length > 0
             }
+            hasStarted={hasStarted}
           />
 
           <PlayersPanel

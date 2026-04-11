@@ -1,8 +1,11 @@
+import { useState } from 'react'
+
 import {
   addPointToMatch,
   getMatchScore,
   isMatchComplete,
   resetMatch,
+  setMatchScore,
   undoPoint,
 } from '../domain/scoring'
 import type { Match, Player, TournamentFormat } from '../domain/types'
@@ -14,8 +17,73 @@ interface SchedulePanelProps {
   onChangeMatch: (matchId: string, nextMatch: Match) => void
 }
 
+interface ManualScoreEditorProps {
+  match: Match
+  leftScore: number
+  rightScore: number
+  onSave: (match: Match) => void
+}
+
 const getPlayerName = (players: Player[], playerId: string) =>
   players.find((player) => player.id === playerId)?.name ?? 'Unknown'
+
+function ManualScoreEditor({ match, leftScore, rightScore, onSave }: ManualScoreEditorProps) {
+  const [leftDraft, setLeftDraft] = useState(leftScore.toString())
+  const [rightDraft, setRightDraft] = useState(rightScore.toString())
+  const manualLeft = Number(leftDraft || '0')
+  const manualRight = Number(rightDraft || '0')
+  const isManualValid =
+    Number.isInteger(manualLeft) &&
+    Number.isInteger(manualRight) &&
+    manualLeft >= 0 &&
+    manualRight >= 0 &&
+    manualLeft + manualRight <= match.pointsTarget
+
+  return (
+    <div className="manual-score-box">
+      <div className="manual-score-grid">
+        <label className="field">
+          <span>Skor kiri manual</span>
+          <input
+            type="number"
+            min={0}
+            max={match.pointsTarget}
+            inputMode="numeric"
+            value={leftDraft}
+            onChange={(event) => setLeftDraft(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Skor kanan manual</span>
+          <input
+            type="number"
+            min={0}
+            max={match.pointsTarget}
+            inputMode="numeric"
+            value={rightDraft}
+            onChange={(event) => setRightDraft(event.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="action-row">
+        <button
+          className="button button-secondary"
+          disabled={!isManualValid}
+          onClick={() => onSave(setMatchScore(match, manualLeft, manualRight))}
+        >
+          Simpan skor manual
+        </button>
+        <span className={`manual-score-note ${isManualValid ? '' : 'manual-score-note-error'}`}>
+          {isManualValid
+            ? `Total manual ${manualLeft + manualRight}/${match.pointsTarget} poin`
+            : `Total poin tidak boleh lebih dari ${match.pointsTarget}`}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export function SchedulePanel({
   matches,
@@ -116,6 +184,14 @@ export function SchedulePanel({
                             Reset match
                           </button>
                         </div>
+
+                        <ManualScoreEditor
+                          key={`${match.id}-${score.left}-${score.right}`}
+                          match={match}
+                          leftScore={score.left}
+                          rightScore={score.right}
+                          onSave={(nextMatch) => onChangeMatch(match.id, nextMatch)}
+                        />
 
                         <div className="point-log">
                           {match.pointLog.length === 0 ? (
