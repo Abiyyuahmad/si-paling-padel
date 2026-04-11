@@ -1,0 +1,17 @@
+{
+  "name": "Padel Score Hub",
+  "short_name": "Padel Score",
+  "description": "PWA scoring padel untuk Americano dan Mexicano dengan live score dan klasemen.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6efe2",
+  "theme_color": "#cb5d2a",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
